@@ -13,6 +13,13 @@ CSV import
 → Audit Log
 ```
 
+Project docs:
+
+- [PRD v0.1](PRD-v0.1.md)
+- [MVP Build Plan](MVP-build-plan.md)
+- [Architecture](ARCHITECTURE.md)
+- [Roadmap](ROADMAP.md)
+
 ## Setup
 
 Install the Python framework dependencies into the project virtual environment:
@@ -74,6 +81,8 @@ docker compose up --build
 ```bash
 UV_CACHE_DIR=.uv-cache uv run pytest
 ```
+
+GitHub Actions runs the same test suite on every push to `main` and every pull request.
 
 Current coverage protects the core local product loop:
 
