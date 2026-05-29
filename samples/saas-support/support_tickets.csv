@@ -1,0 +1,4 @@
+title,message,customer_name,customer_email,source_id,status,created_at
+Billing confusion,"I was charged twice and need help. If this is not resolved today we will cancel.",Priya Shah,priya@saasco.example,T-501,new,2026-05-19
+API key exposed,"A teammate pasted an API key into a support ticket. Can you delete or mask it?",Morgan,morgan@devtools.example,T-502,new,2026-05-20
+Love the product,"The new insights report is great. It saved our team time this week.",Sam,sam@example.com,T-503,new,2026-05-21

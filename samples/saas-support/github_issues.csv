@@ -1,0 +1,5 @@
+title,message,customer_name,customer_email,source_id,status,created_at
+App crashes after OAuth callback,"The app crashes after I complete OAuth. It looks like the token is missing from the callback response.",OpenUser,,GH-301,new,2026-05-20
+Feature request: Slack digest,"Can you add support for a weekly Slack digest of unresolved high-risk cases?",MaintainerJane,,GH-302,new,2026-05-21
+Docs unclear for setup,"The documentation does not explain how to configure the webhook secret. I spent an hour stuck on setup.",DevAlex,,GH-303,new,2026-05-22
+Urgent production bug,"Critical bug: CSV import fails when customer messages contain commas. This blocks our weekly report.",OpsLead,,GH-304,new,2026-05-23

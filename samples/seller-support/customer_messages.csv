@@ -1,0 +1,4 @@
+title,message,customer_name,customer_email,order_id,amount,currency,product_name,status,created_at
+Angry review threat,"This company feels like a scam. I emailed three times about my lost shipment and nobody replied. I am leaving a public review.",Riley Johnson,riley@example.com,SO-1005,188.00,USD,Mirror Cabinet,new,2026-05-23
+Return policy question,"I opened the package but never installed the item. Am I still eligible for a return within 30 days?",Nora Lee,nora@example.com,SO-1006,56.00,USD,Towel Rack,new,2026-05-23
+Positive note,"Thanks, the replacement arrived and works well.",Leo Park,leo@example.com,SO-1007,45.00,USD,Drawer Organizer,new,2026-05-24

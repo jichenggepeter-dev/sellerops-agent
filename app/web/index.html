@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SellerOps Agent</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="mark">SO</div>
+        <div>
+          <h1>SellerOps Agent</h1>
+          <p>Governed AI ops workspace</p>
+        </div>
+      </div>
+      <nav>
+        <button class="nav-item active" data-view="inbox">Inbox</button>
+        <button class="nav-item" data-view="review">Review Queue</button>
+        <button class="nav-item" data-view="insights">Insights</button>
+        <button class="nav-item" data-view="audit">Audit Log</button>
+      </nav>
+      <section class="import-card">
+        <label for="templateType">Template</label>
+        <select id="templateType">
+          <option value="seller_support">Seller Support</option>
+          <option value="saas_support">SaaS Support</option>
+        </select>
+
+        <label for="sampleSelect">Load sample CSV</label>
+        <select id="sampleSelect">
+          <option value="">Choose a sample...</option>
+        </select>
+
+        <label for="csvText">CSV input</label>
+        <textarea id="csvText" placeholder="Paste support tickets, refund requests, comments, or issues CSV here"></textarea>
+        <button id="importCsv" class="primary">Import and triage</button>
+        <p id="importStatus" class="muted"></p>
+      </section>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Milestone 1</p>
+          <h2 id="viewTitle">Inbox</h2>
+        </div>
+        <div class="metrics">
+          <div><span id="caseCount">0</span><small>Cases</small></div>
+          <div><span id="reviewCount">0</span><small>Need review</small></div>
+          <div><span id="avgRisk">0</span><small>Avg risk</small></div>
+        </div>
+      </header>
+
+      <section id="inboxView" class="view active">
+        <div class="toolbar">
+          <input id="caseSearch" placeholder="Search cases, labels, customers..." />
+          <select id="riskFilter">
+            <option value="">All risk levels</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <div class="case-layout">
+          <section class="panel">
+            <h3>Cases</h3>
+            <div id="caseList" class="case-list"></div>
+          </section>
+          <section class="panel detail-panel">
+            <div id="caseDetail" class="empty-state">Import a CSV or select a case.</div>
+          </section>
+        </div>
+      </section>
+
+      <section id="reviewView" class="view">
+        <div class="case-layout">
+          <section class="panel">
+            <h3>Pending review</h3>
+            <div id="reviewList" class="case-list"></div>
+          </section>
+          <section class="panel detail-panel">
+            <div id="reviewDetail" class="empty-state">Select a case to review.</div>
+          </section>
+        </div>
+      </section>
+
+      <section id="insightsView" class="view">
+        <div class="insight-grid">
+          <article class="panel">
+            <h3>Top Issue Clusters</h3>
+            <div id="clusterList"></div>
+          </article>
+          <article class="panel">
+            <h3>Root Cause Hypotheses</h3>
+            <div id="rootCauses"></div>
+          </article>
+          <article class="panel">
+            <h3>Weekly Report Draft</h3>
+            <textarea id="weeklyReport" readonly></textarea>
+          </article>
+        </div>
+      </section>
+
+      <section id="auditView" class="view">
+        <article class="panel">
+          <h3>Action and Review Audit</h3>
+          <div id="auditList" class="audit-list"></div>
+        </article>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

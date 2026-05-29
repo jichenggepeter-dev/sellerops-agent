@@ -1,0 +1,5 @@
+title,message,customer_name,customer_email,order_id,amount,currency,product_name,status,created_at
+Refund request for delayed package,"My package is 12 days late and tracking has not moved. I want a refund today or I will post this on TikTok.",Maya Chen,maya@example.com,SO-1001,129.00,USD,LED Vanity Mirror,new,2026-05-20
+Damaged item received,"The bathroom shelf arrived broken. This is the second time. Please send a replacement or refund my money.",Chris Miller,chris@example.com,SO-1002,78.50,USD,Bathroom Shelf,new,2026-05-21
+Question about sizing,"Can you confirm whether the medium storage bin fits under a 24 inch sink?",Ava Smith,ava@example.com,SO-1003,34.99,USD,Storage Bin,new,2026-05-21
+Wrong color shipped,"I ordered matte black but received silver. I need this fixed ASAP because my contractor is waiting.",Daniel Wu,daniel@example.com,SO-1004,212.00,USD,Faucet Set,new,2026-05-22
