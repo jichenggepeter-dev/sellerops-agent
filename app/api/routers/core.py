@@ -83,7 +83,7 @@ def import_csv(payload: CsvImportRequest) -> dict[str, Any]:
     if not rows:
         raise HTTPException(status_code=400, detail="CSV input is empty or invalid.")
     ids = [
-        insert_case_and_analysis(row, payload.template_type, payload.source_type)
+        insert_case_and_analysis(row, payload.template_type, payload.source_type, payload.workspace_id)
         for row in rows
     ]
     return {"imported": len(ids), "case_ids": ids}

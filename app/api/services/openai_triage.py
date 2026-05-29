@@ -64,6 +64,7 @@ class OpenAITriageProvider:
             requires_human_review=parsed.requires_human_review,
             model_name=self.model_name,
             prompt_version=self.prompt_version,
+            provider_name=self.name,
         )
 
     def _instructions(self, template_type: str, policy_context: str) -> str:
@@ -95,4 +96,3 @@ Case:
 - product_name: {case.get("product_name", "")}
 - status: {case.get("status", "")}
 """.strip()
-

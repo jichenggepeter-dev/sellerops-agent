@@ -28,6 +28,10 @@ class TriageResult:
     requires_human_review: bool
     model_name: str
     prompt_version: str
+    analysis_status: str = "succeeded"
+    provider_name: str = ""
+    failure_reason: str = ""
+    fallback_used: bool = False
 
 
 class TriageProvider(Protocol):
@@ -142,6 +146,7 @@ class MockTriageProvider:
             requires_human_review=requires_review,
             model_name=self.model_name,
             prompt_version=self.prompt_version,
+            provider_name=self.name,
         )
 
     def _policy_basis(self, requires_review: bool, policy_context: str) -> str:

@@ -110,6 +110,7 @@ Current coverage protects the core local product loop:
 - policy defaults and versioned policy updates
 - CSV import
 - mock triage output
+- AI/provider failure states
 - Review Queue
 - approval flow
 - Audit Log
@@ -171,6 +172,7 @@ SELLEROPS_PORT=8001 python3 app/api/server.py
   - human review flag
 - View cases in Inbox.
 - Review high-risk cases in Review Queue.
+- Route AI/provider failures into Review Queue instead of dropping imported cases.
 - Edit/review AI decisions.
 - Approve or reject actions.
 - Persist decisions and action records in Audit Log.

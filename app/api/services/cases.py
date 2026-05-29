@@ -6,13 +6,20 @@ import json
 import re
 
 from app.api.repositories import execute_insert, execute_write, fetch_all, fetch_one
+from app.api.config import get_settings
 from app.api.services.connectors import execute_action
+from app.api.services.triage import MockTriageProvider, TriageResult
 from app.api.services.triage_registry import get_triage_provider
 from app.api.services.policies import active_policy_context
 from app.api.time_utils import utc_now
 
 
-def insert_case_and_analysis(row: dict, template_type: str, source_type: str) -> int:
+def insert_case_and_analysis(
+    row: dict,
+    template_type: str,
+    source_type: str,
+    workspace_id: str = "default",
+) -> int:
     title = row.get("title") or row.get("category") or row.get("issue") or "Imported case"
     message = row.get("message") or row.get("body") or row.get("notes") or title
     amount = None
@@ -42,12 +49,13 @@ def insert_case_and_analysis(row: dict, template_type: str, source_type: str) ->
     case_id = execute_insert(
         """
         INSERT INTO cases (
-          template_type, source_type, source_id, title, message, customer_name,
+          workspace_id, template_type, source_type, source_id, title, message, customer_name,
           customer_email, order_id, amount, currency, product_name, status,
           owner, created_at, imported_at, metadata_json
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
+            workspace_id,
             template_type,
             source_type,
             row.get("source_id") or row.get("id") or "",
@@ -70,14 +78,15 @@ def insert_case_and_analysis(row: dict, template_type: str, source_type: str) ->
     case["title"] = title
     case["message"] = message
     policy_context = active_policy_context(template_type=template_type)
-    analysis = get_triage_provider().analyze(case, template_type, policy_context)
+    analysis = analyze_case_safely(case, template_type, policy_context)
     execute_insert(
         """
         INSERT INTO case_analyses (
           case_id, category, severity, sentiment, risk_score, risk_labels,
           policy_basis, reason, suggested_action, suggested_owner, reply_draft,
-          confidence_score, requires_human_review, model_name, prompt_version, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          confidence_score, requires_human_review, model_name, prompt_version,
+          analysis_status, provider_name, failure_reason, fallback_used, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             case_id,
@@ -95,10 +104,74 @@ def insert_case_and_analysis(row: dict, template_type: str, source_type: str) ->
             int(analysis.requires_human_review),
             analysis.model_name,
             analysis.prompt_version,
+            analysis.analysis_status,
+            analysis.provider_name,
+            analysis.failure_reason,
+            int(analysis.fallback_used),
             now,
         ),
     )
     return case_id
+
+
+def analyze_case_safely(case: dict, template_type: str, policy_context: str) -> TriageResult:
+    try:
+        provider = get_triage_provider()
+    except Exception as exc:
+        return failed_triage_result(
+            provider_name=get_settings().triage_provider,
+            failure_reason=str(exc),
+        )
+    try:
+        return provider.analyze(case, template_type, policy_context)
+    except Exception as exc:
+        failure_reason = str(exc)
+        if provider.name != "mock" and get_settings().triage_fallback_to_mock:
+            try:
+                fallback = MockTriageProvider().analyze(case, template_type, policy_context)
+                fallback.analysis_status = "fallback_used"
+                fallback.provider_name = provider.name
+                fallback.failure_reason = failure_reason
+                fallback.fallback_used = True
+                fallback.requires_human_review = True
+                fallback.risk_labels = sorted(set([*fallback.risk_labels, "ai_provider_failed"]))
+                fallback.policy_basis = f"{fallback.policy_basis} AI provider failed; human review required."
+                return fallback
+            except Exception as fallback_exc:
+                failure_reason = f"{failure_reason}; fallback failed: {fallback_exc}"
+        return failed_triage_result(
+            provider_name=provider.name,
+            failure_reason=failure_reason,
+            model_name=getattr(provider, "model_name", provider.name),
+            prompt_version=getattr(provider, "prompt_version", "unknown"),
+        )
+
+
+def failed_triage_result(
+    provider_name: str,
+    failure_reason: str,
+    model_name: str | None = None,
+    prompt_version: str = "unknown",
+) -> TriageResult:
+    return TriageResult(
+        category="analysis_failed",
+        severity="high",
+        sentiment="unknown",
+        risk_score=75,
+        risk_labels=["ai_provider_failed", "needs_human_escalation"],
+        policy_basis="AI analysis failed. Human review is required before any action.",
+        reason="The triage provider failed before producing a validated analysis.",
+        suggested_action="manual_review",
+        suggested_owner="support_lead",
+        reply_draft="",
+        confidence_score=0.0,
+        requires_human_review=True,
+        model_name=model_name or provider_name,
+        prompt_version=prompt_version,
+        analysis_status="failed",
+        provider_name=provider_name,
+        failure_reason=failure_reason,
+    )
 
 
 def latest_cases(review_only: bool = False) -> list[dict]:
@@ -109,7 +182,8 @@ def latest_cases(review_only: bool = False) -> list[dict]:
           c.*, a.id AS analysis_id, a.category, a.severity, a.sentiment,
           a.risk_score, a.risk_labels, a.policy_basis, a.reason,
           a.suggested_action, a.suggested_owner, a.reply_draft,
-          a.confidence_score, a.requires_human_review, a.created_at AS analyzed_at
+          a.confidence_score, a.requires_human_review, a.analysis_status,
+          a.provider_name, a.failure_reason, a.fallback_used, a.created_at AS analyzed_at
         FROM cases c
         JOIN case_analyses a ON a.case_id = c.id
         JOIN (

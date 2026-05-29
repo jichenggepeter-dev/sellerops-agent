@@ -50,6 +50,7 @@ def init_db() -> None:
             """
             CREATE TABLE IF NOT EXISTS cases (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
+              workspace_id TEXT NOT NULL DEFAULT 'default',
               template_type TEXT NOT NULL,
               source_type TEXT NOT NULL,
               source_id TEXT,
@@ -85,6 +86,10 @@ def init_db() -> None:
               requires_human_review INTEGER NOT NULL,
               model_name TEXT NOT NULL,
               prompt_version TEXT NOT NULL,
+              analysis_status TEXT NOT NULL DEFAULT 'succeeded',
+              provider_name TEXT,
+              failure_reason TEXT,
+              fallback_used INTEGER NOT NULL DEFAULT 0,
               created_at TEXT NOT NULL,
               FOREIGN KEY(case_id) REFERENCES cases(id)
             );
@@ -151,8 +156,30 @@ def run_migrations() -> bool:
         return False
 
     config = Config(str(alembic_ini))
+    stamp_legacy_sqlite_schema(config)
     command.upgrade(config, "head")
     return True
+
+
+def stamp_legacy_sqlite_schema(config) -> None:
+    settings = get_settings()
+    if not settings.uses_sqlite or not settings.database_path.exists():
+        return
+    with sqlite3.connect(settings.database_path) as conn:
+        tables = {
+            row[0]
+            for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'").fetchall()
+        }
+    if "cases" not in tables:
+        return
+    if "alembic_version" in tables:
+        with sqlite3.connect(settings.database_path) as conn:
+            current = conn.execute("SELECT version_num FROM alembic_version").fetchone()
+        if current is not None:
+            return
+    from alembic import command
+
+    command.stamp(config, "0001_initial_schema")
 
 
 @lru_cache

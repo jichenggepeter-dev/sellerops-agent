@@ -13,6 +13,7 @@ class Case(SQLModel, table=True):
     __tablename__ = "cases"
 
     id: int | None = Field(default=None, primary_key=True)
+    workspace_id: str = "default"
     template_type: str
     source_type: str
     source_id: str | None = None
@@ -50,6 +51,10 @@ class CaseAnalysis(SQLModel, table=True):
     requires_human_review: int
     model_name: str
     prompt_version: str
+    analysis_status: str = "succeeded"
+    provider_name: str | None = None
+    failure_reason: str | None = None
+    fallback_used: int = 0
     created_at: str
 
 
@@ -100,4 +105,3 @@ class Policy(SQLModel, table=True):
     active: int = 1
     created_at: str
     updated_at: str
-

@@ -78,6 +78,15 @@ app/api/
 9. Every decision and connector result is written to the audit log.
 10. Human corrections can be exported as eval examples.
 
+If the AI provider fails, SellerOps still saves the case and creates a reviewable analysis state:
+
+- `analysis_status=failed`: provider failed and no fallback was used.
+- `analysis_status=fallback_used`: the configured provider failed, but mock triage produced a safe fallback.
+- `failure_reason`: internal failure detail for debugging.
+- `fallback_used`: machine-readable flag for metrics and audit.
+
+Failed or fallback analyses always require human review.
+
 ## Production Direction
 
 The local default uses SQLite because it is simple and portable. The backend can also run against Postgres by setting `SELLEROPS_DATABASE_URL`.
@@ -87,6 +96,12 @@ Database selection:
 - `SELLEROPS_DATABASE_URL` empty: use SQLite through `SELLEROPS_DB_PATH`.
 - `SELLEROPS_DATABASE_URL=postgresql://...`: use Postgres through SQLAlchemy and psycopg.
 - Alembic reads the same setting, so migrations target the active database.
+
+Workspace scope:
+
+- Imported cases carry `workspace_id`.
+- Policies already carry `workspace_id`.
+- Full auth, users, roles, and tenant isolation are intentionally left for hosted MVP readiness.
 
 The production direction is:
 

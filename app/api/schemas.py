@@ -4,6 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class CsvImportRequest(BaseModel):
+    workspace_id: str = "default"
     template_type: str = Field(default="seller_support")
     source_type: str = Field(default="csv")
     csv_text: str

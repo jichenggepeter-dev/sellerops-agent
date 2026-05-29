@@ -6,6 +6,8 @@ This roadmap keeps the project focused on becoming a real product, not a one-off
 
 Goal: make the local backend reliable, testable, and clear enough for public review.
 
+Status: complete.
+
 Completed:
 
 - FastAPI backend.
@@ -27,15 +29,15 @@ Completed:
 - Connector modules split by provider.
 - Local Postgres Docker profile for the upcoming database adapter.
 - Configurable SQLite/Postgres database adapter.
-
-Next:
-
-- Add richer failure states for AI/provider errors.
-- Add basic auth/workspace scaffolding before real hosted usage.
+- Workspace ID scaffold on imported cases.
+- AI/provider failure states with forced human review.
+- Fallback triage path when configured provider fails.
 
 ## Phase 2: Product Loop Hardening
 
 Goal: make one complete workflow feel real from import to review to action.
+
+Status: next.
 
 Build:
 
