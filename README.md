@@ -34,6 +34,12 @@ Copy the example environment file if you want to override local defaults:
 cp .env.example .env
 ```
 
+By default the API uses local SQLite through `SELLEROPS_DB_PATH`. To use Postgres instead, set `SELLEROPS_DATABASE_URL`:
+
+```text
+SELLEROPS_DATABASE_URL=postgresql://sellerops:sellerops@localhost:5432/sellerops
+```
+
 ## Run Locally With FastAPI
 
 ```bash
@@ -82,7 +88,12 @@ To start a local Postgres service for the production database migration path:
 docker compose --profile postgres up postgres
 ```
 
-The API still uses SQLite until the Postgres adapter is added, but this profile gives the project a ready local database target for the next persistence upgrade.
+Then run the API with:
+
+```bash
+SELLEROPS_DATABASE_URL=postgresql://sellerops:sellerops@localhost:5432/sellerops \
+UV_CACHE_DIR=.uv-cache uv run uvicorn app.api.main:app --host 127.0.0.1 --port 8010
+```
 
 ## Test
 
@@ -217,6 +228,7 @@ The current implementation has a FastAPI service and a fallback dependency-free 
 
 - Backend: FastAPI, with a fallback Python `http.server`
 - Database: SQLite
+- Production database path: Postgres through `SELLEROPS_DATABASE_URL`
 - Migrations: Alembic
 - Schema models: SQLModel
 - Frontend: static HTML/CSS/JS

@@ -17,7 +17,7 @@ target_metadata = None
 
 
 def database_url() -> str:
-    return f"sqlite:///{get_settings().database_path}"
+    return get_settings().sqlalchemy_database_url
 
 
 def run_migrations_offline() -> None:
@@ -52,4 +52,3 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
-

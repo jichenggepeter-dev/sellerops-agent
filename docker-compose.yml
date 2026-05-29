@@ -5,6 +5,7 @@ services:
       - "8010:8010"
     environment:
       SELLEROPS_ENV: local
+      SELLEROPS_DATABASE_URL: ${SELLEROPS_DATABASE_URL:-}
       SELLEROPS_DB_PATH: /app/data/sellerops.db
       SELLEROPS_CORS_ORIGINS: "*"
       SELLEROPS_TRIAGE_PROVIDER: ${SELLEROPS_TRIAGE_PROVIDER:-mock}

@@ -58,6 +58,7 @@ def test_create_github_issue_without_config_is_dry_run(client: TestClient) -> No
 
 
 def test_create_github_issue_posts_when_configured(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.delenv("SELLEROPS_DATABASE_URL", raising=False)
     monkeypatch.setenv("SELLEROPS_DB_PATH", str(tmp_path / "sellerops-test.db"))
     monkeypatch.setenv("SELLEROPS_GITHUB_TOKEN", "ghp_test")
     monkeypatch.setenv("SELLEROPS_GITHUB_REPO", "owner/repo")

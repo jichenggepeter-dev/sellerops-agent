@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     )
 
     env: str = "local"
+    database_url: str = ""
     db_path: str = "data/sellerops.db"
     cors_origins: str = "*"
     log_level: str = "info"
@@ -42,6 +43,20 @@ class Settings(BaseSettings):
         return ROOT / path
 
     @property
+    def sqlalchemy_database_url(self) -> str:
+        if not self.database_url:
+            return f"sqlite:///{self.database_path}"
+        if self.database_url.startswith("postgres://"):
+            return self.database_url.replace("postgres://", "postgresql+psycopg://", 1)
+        if self.database_url.startswith("postgresql://"):
+            return self.database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+        return self.database_url
+
+    @property
+    def uses_sqlite(self) -> bool:
+        return self.sqlalchemy_database_url.startswith("sqlite")
+
+    @property
     def cors_origin_list(self) -> list[str]:
         if self.cors_origins.strip() == "*":
             return ["*"]
@@ -55,3 +70,8 @@ def get_settings() -> Settings:
 
 def reset_settings_cache() -> None:
     get_settings.cache_clear()
+    try:
+        from app.api.db import reset_engine_cache
+    except ImportError:
+        return
+    reset_engine_cache()

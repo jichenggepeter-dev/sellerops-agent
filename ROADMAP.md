@@ -26,11 +26,11 @@ Completed:
 - Request ID propagation and JSON request logs.
 - Connector modules split by provider.
 - Local Postgres Docker profile for the upcoming database adapter.
+- Configurable SQLite/Postgres database adapter.
 
 Next:
 
 - Add richer failure states for AI/provider errors.
-- Add Postgres application adapter for production-like local development.
 - Add basic auth/workspace scaffolding before real hosted usage.
 
 ## Phase 2: Product Loop Hardening

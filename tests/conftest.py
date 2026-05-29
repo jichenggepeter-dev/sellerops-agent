@@ -10,6 +10,7 @@ from app.api.config import reset_settings_cache
 
 @pytest.fixture()
 def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TestClient:
+    monkeypatch.delenv("SELLEROPS_DATABASE_URL", raising=False)
     monkeypatch.setenv("SELLEROPS_DB_PATH", str(tmp_path / "sellerops-test.db"))
     reset_settings_cache()
 
@@ -21,4 +22,3 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TestClient:
         yield test_client
 
     reset_settings_cache()
-

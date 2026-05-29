@@ -1,9 +1,15 @@
-"""SQLite persistence helpers for the local MVP."""
+"""Database helpers for the local MVP and production database path."""
 
 from __future__ import annotations
 
 import json
 import sqlite3
+from collections.abc import Sequence
+from functools import lru_cache
+from typing import Any
+
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine import Engine, RowMapping
 
 from app.api.config import ROOT, get_settings
 
@@ -17,6 +23,8 @@ JSON_COLUMNS = {
 
 
 def connect() -> sqlite3.Connection:
+    if not get_settings().uses_sqlite:
+        raise RuntimeError("sqlite connect() is only available when using a SQLite database URL.")
     db_path = get_settings().database_path
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(db_path)
@@ -24,7 +32,7 @@ def connect() -> sqlite3.Connection:
     return conn
 
 
-def row_to_dict(row: sqlite3.Row) -> dict:
+def row_to_dict(row: sqlite3.Row | RowMapping) -> dict:
     item = dict(row)
     for key in JSON_COLUMNS:
         if key in item and item[key]:
@@ -35,6 +43,8 @@ def row_to_dict(row: sqlite3.Row) -> dict:
 def init_db() -> None:
     if run_migrations():
         return
+    if not get_settings().uses_sqlite:
+        raise RuntimeError("Alembic migrations are required for non-SQLite databases.")
     with connect() as conn:
         conn.executescript(
             """
@@ -143,3 +153,56 @@ def run_migrations() -> bool:
     config = Config(str(alembic_ini))
     command.upgrade(config, "head")
     return True
+
+
+@lru_cache
+def get_engine() -> Engine:
+    return create_engine(get_settings().sqlalchemy_database_url, future=True)
+
+
+def reset_engine_cache() -> None:
+    get_engine.cache_clear()
+
+
+def bind_query(query: str, params: Sequence[Any]) -> tuple[str, dict[str, Any]]:
+    if not params:
+        return query, {}
+    parts = query.split("?")
+    if len(parts) - 1 != len(params):
+        raise ValueError("SQL parameter count does not match placeholder count.")
+    named_params = {f"p{index}": value for index, value in enumerate(params)}
+    bound_query = parts[0]
+    for index, part in enumerate(parts[1:]):
+        bound_query += f":p{index}{part}"
+    return bound_query, named_params
+
+
+def fetch_one_sqlalchemy(query: str, params: Sequence[Any] = ()) -> dict | None:
+    bound_query, named_params = bind_query(query, params)
+    with get_engine().connect() as conn:
+        row = conn.execute(text(bound_query), named_params).mappings().fetchone()
+    return row_to_dict(row) if row else None
+
+
+def fetch_all_sqlalchemy(query: str, params: Sequence[Any] = ()) -> list[dict]:
+    bound_query, named_params = bind_query(query, params)
+    with get_engine().connect() as conn:
+        rows = conn.execute(text(bound_query), named_params).mappings().fetchall()
+    return [row_to_dict(row) for row in rows]
+
+
+def execute_insert_sqlalchemy(query: str, params: Sequence[Any] = ()) -> int:
+    bound_query, named_params = bind_query(query, params)
+    if " returning " not in bound_query.lower():
+        bound_query = f"{bound_query.rstrip()} RETURNING id"
+    with get_engine().begin() as conn:
+        row = conn.execute(text(bound_query), named_params).mappings().fetchone()
+    if not row or "id" not in row:
+        raise RuntimeError("Insert did not return an id.")
+    return int(row["id"])
+
+
+def execute_write_sqlalchemy(query: str, params: Sequence[Any] = ()) -> None:
+    bound_query, named_params = bind_query(query, params)
+    with get_engine().begin() as conn:
+        conn.execute(text(bound_query), named_params)

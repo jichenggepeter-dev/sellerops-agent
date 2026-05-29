@@ -60,6 +60,7 @@ def test_slack_escalation_posts_when_webhook_configured(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
+    monkeypatch.delenv("SELLEROPS_DATABASE_URL", raising=False)
     monkeypatch.setenv("SELLEROPS_DB_PATH", str(tmp_path / "sellerops-test.db"))
     monkeypatch.setenv("SELLEROPS_SLACK_WEBHOOK_URL", "https://hooks.slack.test/services/T000/B000/XXX")
     reset_settings_cache()

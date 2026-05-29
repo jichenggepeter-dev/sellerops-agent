@@ -80,7 +80,15 @@ app/api/
 
 ## Production Direction
 
-The local MVP uses SQLite because it is simple and portable. The production direction is:
+The local default uses SQLite because it is simple and portable. The backend can also run against Postgres by setting `SELLEROPS_DATABASE_URL`.
+
+Database selection:
+
+- `SELLEROPS_DATABASE_URL` empty: use SQLite through `SELLEROPS_DB_PATH`.
+- `SELLEROPS_DATABASE_URL=postgresql://...`: use Postgres through SQLAlchemy and psycopg.
+- Alembic reads the same setting, so migrations target the active database.
+
+The production direction is:
 
 - PostgreSQL for hosted persistence.
 - OAuth/API-key backed connectors for Shopify, Zendesk, GitHub, Slack, Stripe, and eventually marketplace APIs.

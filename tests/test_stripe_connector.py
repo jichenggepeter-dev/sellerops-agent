@@ -56,6 +56,7 @@ def test_stripe_refund_without_key_is_dry_run(client: TestClient) -> None:
 
 
 def test_live_stripe_key_is_blocked_by_default(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.delenv("SELLEROPS_DATABASE_URL", raising=False)
     monkeypatch.setenv("SELLEROPS_DB_PATH", str(tmp_path / "sellerops-test.db"))
     monkeypatch.setenv("SELLEROPS_STRIPE_API_KEY", "sk_live_test")
     monkeypatch.setenv("SELLEROPS_STRIPE_ALLOW_LIVE_MODE", "false")
@@ -92,6 +93,7 @@ def test_live_stripe_key_is_blocked_by_default(tmp_path: Path, monkeypatch) -> N
 
 
 def test_stripe_refund_executes_with_test_key(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.delenv("SELLEROPS_DATABASE_URL", raising=False)
     monkeypatch.setenv("SELLEROPS_DB_PATH", str(tmp_path / "sellerops-test.db"))
     monkeypatch.setenv("SELLEROPS_STRIPE_API_KEY", "sk_test_123")
     reset_settings_cache()
@@ -139,4 +141,3 @@ def test_stripe_refund_executes_with_test_key(tmp_path: Path, monkeypatch) -> No
     assert log["status"] == "executed"
     assert log["response_payload_json"]["id"] == "re_test_123"
     reset_settings_cache()
-
