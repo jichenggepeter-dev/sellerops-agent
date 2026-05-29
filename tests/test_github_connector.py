@@ -6,7 +6,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from app.api.config import reset_settings_cache
-from app.api.services import connectors
+from app.api.services.connectors import github
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -88,7 +88,7 @@ def test_create_github_issue_posts_when_configured(tmp_path: Path, monkeypatch) 
         calls.append((request, timeout))
         return FakeResponse()
 
-    monkeypatch.setattr(connectors, "urlopen", fake_urlopen)
+    monkeypatch.setattr(github, "urlopen", fake_urlopen)
 
     with TestClient(app) as client:
         review_case = _seed_saas_review_case(client)
@@ -117,4 +117,3 @@ def test_create_github_issue_posts_when_configured(tmp_path: Path, monkeypatch) 
     assert log["response_payload_json"]["status_code"] == 201
     assert log["response_payload_json"]["body"]["html_url"].endswith("/123")
     reset_settings_cache()
-

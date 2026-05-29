@@ -19,5 +19,18 @@ services:
     volumes:
       - sellerops_data:/app/data
 
+  postgres:
+    image: postgres:16-alpine
+    profiles: ["postgres"]
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: sellerops
+      POSTGRES_USER: sellerops
+      POSTGRES_PASSWORD: sellerops
+    volumes:
+      - sellerops_postgres:/var/lib/postgresql/data
+
 volumes:
   sellerops_data:
+  sellerops_postgres:

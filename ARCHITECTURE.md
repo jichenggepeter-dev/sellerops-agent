@@ -46,6 +46,8 @@ app/api/
   main.py                 FastAPI app setup, startup lifecycle, static frontend mount
   config.py               environment-driven settings
   db.py                   SQLite connection and Alembic migration startup
+  logging_config.py       JSON logging and request context
+  middleware.py           request ID propagation and request logging
   models.py               SQLModel table definitions for the current schema
   repositories.py         centralized SQL read/write helpers
   schemas.py              Pydantic request models
@@ -54,7 +56,7 @@ app/api/
     core.py               public API routes for cases, import, reviews, policies, metrics, evals
   services/
     cases.py              case persistence, review decisions, audit records
-    connectors.py         approved external actions and dry-run behavior
+    connectors/           approved external actions and dry-run behavior
     csv_import.py         CSV parsing and flexible header normalization
     evals.py              review quality metrics and eval export
     openai_triage.py      OpenAI structured-output triage provider
@@ -86,6 +88,24 @@ The local MVP uses SQLite because it is simple and portable. The production dire
 - Tenant/workspace isolation before any multi-user deployment.
 - Stronger observability through structured logs, request IDs, action IDs, and connector trace records.
 - Auth and role-based permissions before connecting live business systems.
+
+## Observability
+
+The API attaches a request ID to each request and returns it through `X-Request-ID`. If the caller provides `X-Request-ID`, SellerOps preserves it; otherwise, the API generates one.
+
+Request logs are emitted as JSON with:
+
+- timestamp
+- level
+- logger
+- message
+- request_id
+- method
+- path
+- status_code
+- duration_ms
+
+This makes local logs closer to hosted production logs, where debugging usually starts from a request ID or an action/audit record.
 
 ## Safety Model
 

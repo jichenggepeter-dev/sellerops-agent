@@ -76,6 +76,14 @@ SELLEROPS_OPENAI_API_KEY=... \
 docker compose up --build
 ```
 
+To start a local Postgres service for the production database migration path:
+
+```bash
+docker compose --profile postgres up postgres
+```
+
+The API still uses SQLite until the Postgres adapter is added, but this profile gives the project a ready local database target for the next persistence upgrade.
+
 ## Test
 
 ```bash
@@ -176,6 +184,8 @@ app/api/
   main.py                 # FastAPI app assembly, router registration, static files
   config.py               # project paths
   db.py                   # SQLite connection, schema initialization, row decoding
+  logging_config.py       # JSON log formatting and request context
+  middleware.py           # request ID propagation and request logging
   models.py               # SQLModel table definitions for the current schema
   repositories.py         # centralized SQL helpers for reads/writes
   schemas.py              # Pydantic request models
@@ -186,6 +196,7 @@ app/api/
     csv_import.py         # CSV parsing and header normalization
     triage.py             # mock AI triage service; future LLM provider seam
     cases.py              # case persistence, review decisions, audit logs
+    connectors/           # approved external actions and dry-run behavior
     policies.py           # default policies, versioned policy updates, active context
     evals.py              # review quality metrics and eval export
   server.py               # dependency-free fallback local server

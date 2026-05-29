@@ -11,12 +11,15 @@ from fastapi.staticfiles import StaticFiles
 
 from app.api.config import WEB_ROOT, get_settings
 from app.api.db import init_db
+from app.api.logging_config import configure_logging
+from app.api.middleware import RequestContextMiddleware
 from app.api.routers.core import router as core_router
 from app.api.services.policies import ensure_default_policies
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    configure_logging()
     init_db()
     ensure_default_policies()
     yield
@@ -29,6 +32,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(RequestContextMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_settings().cors_origin_list,

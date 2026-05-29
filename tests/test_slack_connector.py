@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from app.api.config import reset_settings_cache
-from app.api.services import connectors
+from app.api.services.connectors import slack
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -89,7 +89,7 @@ def test_slack_escalation_posts_when_webhook_configured(
         calls.append((request, timeout))
         return FakeResponse()
 
-    monkeypatch.setattr(connectors, "urlopen", fake_urlopen)
+    monkeypatch.setattr(slack, "urlopen", fake_urlopen)
 
     with TestClient(app) as client:
         review_case = _seed_review_case(client)
@@ -115,4 +115,3 @@ def test_slack_escalation_posts_when_webhook_configured(
     assert log["status"] == "executed"
     assert log["response_payload_json"]["status_code"] == 200
     reset_settings_cache()
-
