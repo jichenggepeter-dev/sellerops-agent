@@ -53,6 +53,8 @@ def test_review_quality_metrics_and_eval_export(client: TestClient) -> None:
     assert metrics["category_correction_rate"] == 1.0
     assert metrics["action_correction_rate"] == 1.0
     assert metrics["eval_cases"] == 1
+    assert metrics["field_corrections"]["category"] == 1
+    assert metrics["field_corrections"]["action"] == 1
 
     export_response = client.get("/api/evals/export")
     assert export_response.status_code == 200
@@ -63,4 +65,8 @@ def test_review_quality_metrics_and_eval_export(client: TestClient) -> None:
     assert example["ai_output"]["category"] == "refund_request"
     assert example["human_correction"]["category"] == "public_refund_escalation"
     assert example["human_correction"]["action"] == "slack_escalation"
-
+    edit_history = {event["field_name"]: event for event in example["edit_history"]}
+    assert edit_history["category"]["ai_value_json"] == "refund_request"
+    assert edit_history["category"]["human_value_json"] == "public_refund_escalation"
+    assert edit_history["category"]["changed"] == 1
+    assert edit_history["owner"]["changed"] == 0

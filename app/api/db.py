@@ -19,6 +19,8 @@ JSON_COLUMNS = {
     "metadata_json",
     "request_payload_json",
     "response_payload_json",
+    "ai_value_json",
+    "human_value_json",
 }
 
 
@@ -110,6 +112,21 @@ def init_db() -> None:
               correction_reason TEXT,
               add_to_eval_dataset INTEGER NOT NULL,
               created_at TEXT NOT NULL,
+              FOREIGN KEY(case_id) REFERENCES cases(id),
+              FOREIGN KEY(analysis_id) REFERENCES case_analyses(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS review_edit_events (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              review_id INTEGER NOT NULL,
+              case_id INTEGER NOT NULL,
+              analysis_id INTEGER NOT NULL,
+              field_name TEXT NOT NULL,
+              ai_value_json TEXT NOT NULL,
+              human_value_json TEXT NOT NULL,
+              changed INTEGER NOT NULL,
+              created_at TEXT NOT NULL,
+              FOREIGN KEY(review_id) REFERENCES review_decisions(id),
               FOREIGN KEY(case_id) REFERENCES cases(id),
               FOREIGN KEY(analysis_id) REFERENCES case_analyses(id)
             );

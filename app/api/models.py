@@ -78,6 +78,20 @@ class ReviewDecision(SQLModel, table=True):
     created_at: str
 
 
+class ReviewEditEvent(SQLModel, table=True):
+    __tablename__ = "review_edit_events"
+
+    id: int | None = Field(default=None, primary_key=True)
+    review_id: int = Field(foreign_key="review_decisions.id")
+    case_id: int = Field(foreign_key="cases.id")
+    analysis_id: int = Field(foreign_key="case_analyses.id")
+    field_name: str
+    ai_value_json: str
+    human_value_json: str
+    changed: int
+    created_at: str
+
+
 class ActionLog(SQLModel, table=True):
     __tablename__ = "action_logs"
 

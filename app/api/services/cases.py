@@ -251,6 +251,7 @@ def create_review(payload: dict) -> dict:
     corrected_action = payload.get("corrected_action") or payload.get("suggested_action") or "reply_draft"
     corrected_owner = payload.get("corrected_owner") or ""
     case = fetch_one("SELECT * FROM cases WHERE id = ?", (case_id,)) or {}
+    analysis = fetch_one("SELECT * FROM case_analyses WHERE id = ? AND case_id = ?", (analysis_id, case_id)) or {}
     decision_id = execute_insert(
         """
         INSERT INTO review_decisions (
@@ -276,6 +277,14 @@ def create_review(payload: dict) -> dict:
             int(bool(payload.get("add_to_eval_dataset"))),
             now,
         ),
+    )
+    record_review_edit_events(
+        review_id=decision_id,
+        case_id=case_id,
+        analysis_id=analysis_id,
+        payload=payload,
+        analysis=analysis,
+        created_at=now,
     )
     execution = (
         execute_action(corrected_action, payload, case)
@@ -306,6 +315,70 @@ def create_review(payload: dict) -> dict:
         ),
     )
     return {"decision_id": decision_id, "status": status}
+
+
+def record_review_edit_events(
+    review_id: int,
+    case_id: int,
+    analysis_id: int,
+    payload: dict,
+    analysis: dict,
+    created_at: str,
+) -> None:
+    for event in build_review_edit_events(payload=payload, analysis=analysis):
+        execute_insert(
+            """
+            INSERT INTO review_edit_events (
+              review_id, case_id, analysis_id, field_name, ai_value_json,
+              human_value_json, changed, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                review_id,
+                case_id,
+                analysis_id,
+                event["field_name"],
+                json.dumps(event["ai_value"]),
+                json.dumps(event["human_value"]),
+                int(event["changed"]),
+                created_at,
+            ),
+        )
+
+
+def build_review_edit_events(payload: dict, analysis: dict) -> list[dict]:
+    field_map = [
+        ("category", "category", "corrected_category"),
+        ("severity", "severity", "corrected_severity"),
+        ("risk_score", "risk_score", "corrected_risk_score"),
+        ("risk_labels", "risk_labels", "corrected_risk_labels"),
+        ("action", "suggested_action", "corrected_action"),
+        ("owner", "suggested_owner", "corrected_owner"),
+        ("reply", "reply_draft", "corrected_reply"),
+    ]
+    events = []
+    for field_name, ai_key, human_key in field_map:
+        ai_value = analysis.get(ai_key)
+        human_value = payload.get(human_key)
+        if human_value in (None, "") and field_name != "risk_labels":
+            human_value = ai_value
+        if field_name == "risk_labels":
+            human_value = human_value or ai_value or []
+        events.append(
+            {
+                "field_name": field_name,
+                "ai_value": ai_value,
+                "human_value": human_value,
+                "changed": normalize_edit_value(ai_value) != normalize_edit_value(human_value),
+            }
+        )
+    return events
+
+
+def normalize_edit_value(value):
+    if isinstance(value, list):
+        return sorted(value)
+    return value
 
 
 def review_case_status(decision: str, execution_status: str) -> str:

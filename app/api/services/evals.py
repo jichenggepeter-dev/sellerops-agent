@@ -32,6 +32,15 @@ def review_quality_metrics() -> dict:
     owner_corrections = 0
     reply_corrections = 0
     eval_cases = 0
+    field_corrections = {
+        "category": 0,
+        "severity": 0,
+        "risk_score": 0,
+        "risk_labels": 0,
+        "action": 0,
+        "owner": 0,
+        "reply": 0,
+    }
 
     for row in rows:
         category_changed = bool(row["corrected_category"]) and row["corrected_category"] != row["ai_category"]
@@ -49,6 +58,11 @@ def review_quality_metrics() -> dict:
         owner_corrections += int(owner_changed)
         reply_corrections += int(reply_changed)
         eval_cases += int(bool(row["add_to_eval_dataset"]))
+
+    edit_events = fetch_all("SELECT field_name, changed FROM review_edit_events")
+    for event in edit_events:
+        if event["changed"] and event["field_name"] in field_corrections:
+            field_corrections[event["field_name"]] += 1
 
     def rate(count: int) -> float:
         return round(count / total, 4) if total else 0.0
@@ -68,6 +82,7 @@ def review_quality_metrics() -> dict:
         "owner_correction_rate": rate(owner_corrections),
         "reply_correction_rate": rate(reply_corrections),
         "eval_cases": eval_cases,
+        "field_corrections": field_corrections,
     }
 
 
@@ -113,6 +128,7 @@ def export_eval_examples() -> list[dict]:
     examples = []
     for row in rows:
         item = row
+        edit_history = review_edit_history(item["review_id"])
         examples.append(
             {
                 "case": {
@@ -157,6 +173,19 @@ def export_eval_examples() -> list[dict]:
                     "reason": item["correction_reason"],
                     "reviewed_at": item["reviewed_at"],
                 },
+                "edit_history": edit_history,
             }
         )
     return examples
+
+
+def review_edit_history(review_id: int) -> list[dict]:
+    return fetch_all(
+        """
+        SELECT field_name, ai_value_json, human_value_json, changed, created_at
+        FROM review_edit_events
+        WHERE review_id = ?
+        ORDER BY id ASC
+        """,
+        (review_id,),
+    )

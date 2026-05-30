@@ -189,6 +189,7 @@ SELLEROPS_PORT=8001 python3 app/api/server.py
   - routing rules
 - Track review quality metrics.
 - Export human-corrected eval examples.
+- Capture field-level reviewer edit history for evals.
 
 ## Backend Structure
 

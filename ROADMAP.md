@@ -57,6 +57,7 @@ Started:
 
 - Action preview before approval.
 - Case status flow for `needs_review`, `analyzed`, `approved`, `action_executed`, `action_failed`, and `rejected`.
+- Reviewer edit history for field-level AI-to-human corrections.
 
 Success criteria:
 
