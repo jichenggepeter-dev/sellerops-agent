@@ -12,14 +12,7 @@ from app.api.config import get_settings
 def create_github_issue(payload: dict, case: dict | None = None) -> dict:
     settings = get_settings()
     case = case or {}
-    case_title = case.get("title") or f"Case {payload.get('case_id')}"
-    title = f"[SellerOps] {case_title}"
-    body = build_github_issue_body(payload=payload, case=case)
-    request_payload = {
-        "title": title,
-        "body": body,
-        "labels": ["sellerops", payload.get("corrected_category") or "triage"],
-    }
+    request_payload = build_github_issue_payload(payload=payload, case=case)
     if not settings.github_token or not settings.github_repo:
         return {
             "status": "skipped",
@@ -37,8 +30,7 @@ def create_github_comment(payload: dict, case: dict | None = None) -> dict:
     settings = get_settings()
     case = case or {}
     issue_number = case.get("source_id") or payload.get("github_issue_number")
-    body = build_github_comment_body(payload=payload, case=case)
-    request_payload = {"body": body}
+    request_payload = build_github_comment_payload(payload=payload, case=case)
     if not settings.github_token or not settings.github_repo or not issue_number:
         return {
             "status": "skipped",
@@ -51,6 +43,20 @@ def create_github_comment(payload: dict, case: dict | None = None) -> dict:
     issue_number = str(issue_number).removeprefix("GH-")
     url = f"https://api.github.com/repos/{settings.github_repo}/issues/{issue_number}/comments"
     return _post_github(url=url, token=settings.github_token, payload=request_payload)
+
+
+def build_github_issue_payload(payload: dict, case: dict | None = None) -> dict:
+    case = case or {}
+    case_title = case.get("title") or f"Case {payload.get('case_id')}"
+    return {
+        "title": f"[SellerOps] {case_title}",
+        "body": build_github_issue_body(payload=payload, case=case),
+        "labels": ["sellerops", payload.get("corrected_category") or "triage"],
+    }
+
+
+def build_github_comment_payload(payload: dict, case: dict | None = None) -> dict:
+    return {"body": build_github_comment_body(payload=payload, case=case)}
 
 
 def build_github_issue_body(payload: dict, case: dict | None = None) -> str:

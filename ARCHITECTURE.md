@@ -78,6 +78,15 @@ app/api/
 9. Every decision and connector result is written to the audit log.
 10. Human corrections can be exported as eval examples.
 
+Before approval, the API can generate an action preview. The preview uses the same connector payload builders as execution, so reviewers see the Slack message, GitHub issue/comment, Stripe sandbox refund payload, or local action summary before any side effect happens.
+
+Case status uses the following local state flow:
+
+```text
+imported/new -> analyzed | needs_review
+needs_review -> rejected | approved | action_executed | action_failed
+```
+
 If the AI provider fails, SellerOps still saves the case and creates a reviewable analysis state:
 
 - `analysis_status=failed`: provider failed and no fallback was used.

@@ -11,8 +11,7 @@ from app.api.config import get_settings
 
 def send_slack_escalation(payload: dict, case: dict | None = None) -> dict:
     webhook_url = get_settings().slack_webhook_url
-    message = build_slack_message(payload=payload, case=case)
-    request_payload = {"text": message}
+    request_payload = build_slack_payload(payload=payload, case=case)
     if not webhook_url:
         return {
             "status": "skipped",
@@ -46,6 +45,10 @@ def send_slack_escalation(payload: dict, case: dict | None = None) -> dict:
                 "message": str(exc),
             },
         }
+
+
+def build_slack_payload(payload: dict, case: dict | None = None) -> dict:
+    return {"text": build_slack_message(payload=payload, case=case)}
 
 
 def build_slack_message(payload: dict, case: dict | None = None) -> str:

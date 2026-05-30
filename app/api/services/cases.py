@@ -7,7 +7,7 @@ import re
 
 from app.api.repositories import execute_insert, execute_write, fetch_all, fetch_one
 from app.api.config import get_settings
-from app.api.services.connectors import execute_action
+from app.api.services.connectors import execute_action, preview_action
 from app.api.services.triage import MockTriageProvider, TriageResult
 from app.api.services.triage_registry import get_triage_provider
 from app.api.services.policies import active_policy_context
@@ -111,6 +111,8 @@ def insert_case_and_analysis(
             now,
         ),
     )
+    next_status = "needs_review" if analysis.requires_human_review else "analyzed"
+    execute_write("UPDATE cases SET status = ? WHERE id = ?", (next_status, case_id))
     return case_id
 
 
@@ -175,7 +177,12 @@ def failed_triage_result(
 
 
 def latest_cases(review_only: bool = False) -> list[dict]:
-    where = "WHERE a.requires_human_review = 1 AND c.status NOT IN ('approved', 'rejected')" if review_only else ""
+    where = (
+        "WHERE a.requires_human_review = 1 "
+        "AND c.status NOT IN ('approved', 'rejected', 'action_executed', 'action_failed')"
+        if review_only
+        else ""
+    )
     return fetch_all(
         f"""
         SELECT
@@ -206,6 +213,34 @@ def audit_logs() -> list[dict]:
         ORDER BY l.executed_at DESC, l.id DESC
         """
     )
+
+
+def preview_review_action(payload: dict) -> dict:
+    case_id = int(payload["case_id"])
+    analysis_id = int(payload["analysis_id"])
+    case = fetch_one("SELECT * FROM cases WHERE id = ?", (case_id,))
+    if not case:
+        raise ValueError(f"Case {case_id} was not found.")
+    analysis = fetch_one("SELECT * FROM case_analyses WHERE id = ? AND case_id = ?", (analysis_id, case_id))
+    if not analysis:
+        raise ValueError(f"Analysis {analysis_id} was not found for case {case_id}.")
+    action_type = payload.get("corrected_action") or analysis.get("suggested_action") or "reply_draft"
+    preview_payload = {
+        **payload,
+        "corrected_category": payload.get("corrected_category") or analysis.get("category"),
+        "corrected_severity": payload.get("corrected_severity") or analysis.get("severity"),
+        "corrected_risk_score": payload.get("corrected_risk_score") or analysis.get("risk_score"),
+        "corrected_action": action_type,
+        "corrected_owner": payload.get("corrected_owner") or analysis.get("suggested_owner"),
+        "corrected_reply": payload.get("corrected_reply") or analysis.get("reply_draft"),
+    }
+    return {
+        "case_id": case_id,
+        "analysis_id": analysis_id,
+        "case_status": case.get("status"),
+        "decision": payload.get("decision", "approve"),
+        "preview": preview_action(action_type, preview_payload, case),
+    }
 
 
 def create_review(payload: dict) -> dict:
@@ -242,15 +277,15 @@ def create_review(payload: dict) -> dict:
             now,
         ),
     )
-    status = "approved" if decision == "approve" else "rejected"
-    execute_write(
-        "UPDATE cases SET status = ?, owner = ? WHERE id = ?",
-        (status, corrected_owner, case_id),
-    )
     execution = (
         execute_action(corrected_action, payload, case)
         if decision == "approve"
         else {"status": "skipped", "response": {"message": f"{corrected_action} rejected in review"}}
+    )
+    status = review_case_status(decision=decision, execution_status=execution["status"])
+    execute_write(
+        "UPDATE cases SET status = ?, owner = ? WHERE id = ?",
+        (status, corrected_owner, case_id),
     )
     execute_insert(
         """
@@ -271,3 +306,13 @@ def create_review(payload: dict) -> dict:
         ),
     )
     return {"decision_id": decision_id, "status": status}
+
+
+def review_case_status(decision: str, execution_status: str) -> str:
+    if decision != "approve":
+        return "rejected"
+    if execution_status == "executed":
+        return "action_executed"
+    if execution_status == "failed":
+        return "action_failed"
+    return "approved"

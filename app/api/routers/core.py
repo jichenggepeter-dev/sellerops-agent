@@ -13,6 +13,7 @@ from app.api.services.cases import (
     create_review,
     insert_case_and_analysis,
     latest_cases,
+    preview_review_action,
 )
 from app.api.services.csv_import import parse_csv_text
 from app.api.services.evals import export_eval_examples, review_quality_metrics
@@ -92,3 +93,11 @@ def import_csv(payload: CsvImportRequest) -> dict[str, Any]:
 @router.post("/reviews", status_code=201)
 def post_review(payload: ReviewRequest) -> dict[str, Any]:
     return create_review(payload.model_dump())
+
+
+@router.post("/reviews/preview")
+def post_review_preview(payload: ReviewRequest) -> dict[str, Any]:
+    try:
+        return preview_review_action(payload.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc

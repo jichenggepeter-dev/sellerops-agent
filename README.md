@@ -173,8 +173,10 @@ SELLEROPS_PORT=8001 python3 app/api/server.py
 - View cases in Inbox.
 - Review high-risk cases in Review Queue.
 - Route AI/provider failures into Review Queue instead of dropping imported cases.
+- Preview approved actions before executing connector side effects.
 - Edit/review AI decisions.
 - Approve or reject actions.
+- Track case state through review and action execution.
 - Persist decisions and action records in Audit Log.
 - View basic Insights:
   - top issue clusters

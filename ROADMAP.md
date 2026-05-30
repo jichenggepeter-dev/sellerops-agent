@@ -53,6 +53,11 @@ Build:
 - Better eval examples from human corrections.
 - Markdown weekly insight report export.
 
+Started:
+
+- Action preview before approval.
+- Case status flow for `needs_review`, `analyzed`, `approved`, `action_executed`, `action_failed`, and `rejected`.
+
 Success criteria:
 
 - A seller-support sample can produce refund recommendations, reply drafts, escalations, and audit records.

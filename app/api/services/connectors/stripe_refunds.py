@@ -7,20 +7,9 @@ from app.api.config import get_settings
 
 def create_stripe_sandbox_refund(payload: dict, case: dict | None = None) -> dict:
     settings = get_settings()
-    case = case or {}
-    payment_reference = (
-        payload.get("stripe_payment_intent")
-        or payload.get("stripe_charge")
-        or case.get("source_id")
-        or case.get("order_id")
-    )
-    amount = payload.get("refund_amount") or case.get("amount")
-    request_payload = {
-        "payment_reference": payment_reference,
-        "amount": amount,
-        "reason": payload.get("correction_reason") or "Approved SellerOps refund review.",
-        "case_id": payload.get("case_id"),
-    }
+    request_payload = build_stripe_refund_payload(payload=payload, case=case)
+    payment_reference = request_payload["payment_reference"]
+    amount = request_payload["amount"]
     if not settings.stripe_api_key:
         return {
             "status": "skipped",
@@ -91,3 +80,19 @@ def create_stripe_sandbox_refund(payload: dict, case: dict | None = None) -> dic
                 "payload": request_payload,
             },
         }
+
+
+def build_stripe_refund_payload(payload: dict, case: dict | None = None) -> dict:
+    case = case or {}
+    payment_reference = (
+        payload.get("stripe_payment_intent")
+        or payload.get("stripe_charge")
+        or case.get("source_id")
+        or case.get("order_id")
+    )
+    return {
+        "payment_reference": payment_reference,
+        "amount": payload.get("refund_amount") or case.get("amount"),
+        "reason": payload.get("correction_reason") or "Approved SellerOps refund review.",
+        "case_id": payload.get("case_id"),
+    }
