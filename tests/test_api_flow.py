@@ -77,6 +77,7 @@ def test_csv_import_review_and_audit_flow(client: TestClient) -> None:
     assert len(logs) == 1
     assert logs[0]["action_type"] == "refund_review"
     assert logs[0]["status"] == "executed"
+    assert logs[0]["preview_payload_json"]["connector"] == "local"
     assert logs[0]["request_payload_json"]["add_to_eval_dataset"] is True
 
     remaining_review_cases = client.get("/api/review-queue").json()["cases"]

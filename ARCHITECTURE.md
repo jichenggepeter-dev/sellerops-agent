@@ -80,6 +80,8 @@ app/api/
 
 Before approval, the API can generate an action preview. The preview uses the same connector payload builders as execution, so reviewers see the Slack message, GitHub issue/comment, Stripe sandbox refund payload, or local action summary before any side effect happens.
 
+After approval, the audit log stores action result details: the preview payload that was approved, the original review request, the connector response, any external object URL, failure reason, and whether the action is retryable.
+
 Case status uses the following local state flow:
 
 ```text

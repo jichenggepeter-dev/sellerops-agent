@@ -100,8 +100,12 @@ class ActionLog(SQLModel, table=True):
     decision_id: int | None = Field(default=None, foreign_key="review_decisions.id")
     action_type: str
     status: str
+    preview_payload_json: str = "{}"
     request_payload_json: str
     response_payload_json: str
+    external_url: str | None = None
+    failure_reason: str | None = None
+    retryable: int = 0
     executed_by: str
     executed_at: str
 

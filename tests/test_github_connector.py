@@ -115,6 +115,10 @@ def test_create_github_issue_posts_when_configured(tmp_path: Path, monkeypatch) 
     assert request.full_url == "https://api.github.com/repos/owner/repo/issues"
     assert request.headers["Authorization"] == "Bearer ghp_test"
     assert log["status"] == "executed"
+    assert log["external_url"] == "https://github.com/owner/repo/issues/123"
+    assert log["failure_reason"] is None
+    assert log["retryable"] == 0
+    assert log["preview_payload_json"]["payload"]["title"].startswith("[SellerOps]")
     assert log["response_payload_json"]["status_code"] == 201
     assert log["response_payload_json"]["body"]["html_url"].endswith("/123")
     reset_settings_cache()

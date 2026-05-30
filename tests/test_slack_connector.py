@@ -52,6 +52,9 @@ def test_slack_escalation_without_webhook_is_dry_run(client: TestClient) -> None
     log = client.get("/api/audit").json()["logs"][0]
     assert log["action_type"] == "slack_escalation"
     assert log["status"] == "skipped"
+    assert log["failure_reason"] == "Slack webhook URL is not configured."
+    assert log["retryable"] == 0
+    assert log["preview_payload_json"]["connector"] == "slack"
     assert log["response_payload_json"]["dry_run"] is True
     assert "SellerOps escalation" in log["response_payload_json"]["payload"]["text"]
 

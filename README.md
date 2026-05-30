@@ -178,6 +178,7 @@ SELLEROPS_PORT=8001 python3 app/api/server.py
 - Approve or reject actions.
 - Track case state through review and action execution.
 - Persist decisions and action records in Audit Log.
+- Inspect action preview payloads, connector results, external URLs, failure reasons, and retryability in Audit Log.
 - View basic Insights:
   - top issue clusters
   - root cause hypotheses

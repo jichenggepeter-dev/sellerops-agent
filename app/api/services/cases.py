@@ -225,15 +225,7 @@ def preview_review_action(payload: dict) -> dict:
     if not analysis:
         raise ValueError(f"Analysis {analysis_id} was not found for case {case_id}.")
     action_type = payload.get("corrected_action") or analysis.get("suggested_action") or "reply_draft"
-    preview_payload = {
-        **payload,
-        "corrected_category": payload.get("corrected_category") or analysis.get("category"),
-        "corrected_severity": payload.get("corrected_severity") or analysis.get("severity"),
-        "corrected_risk_score": payload.get("corrected_risk_score") or analysis.get("risk_score"),
-        "corrected_action": action_type,
-        "corrected_owner": payload.get("corrected_owner") or analysis.get("suggested_owner"),
-        "corrected_reply": payload.get("corrected_reply") or analysis.get("reply_draft"),
-    }
+    preview_payload = build_review_payload({**payload, "corrected_action": action_type}, analysis)
     return {
         "case_id": case_id,
         "analysis_id": analysis_id,
@@ -291,6 +283,8 @@ def create_review(payload: dict) -> dict:
         if decision == "approve"
         else {"status": "skipped", "response": {"message": f"{corrected_action} rejected in review"}}
     )
+    action_preview = preview_action(corrected_action, build_review_payload(payload, analysis), case)
+    action_details = action_result_details(execution)
     status = review_case_status(decision=decision, execution_status=execution["status"])
     execute_write(
         "UPDATE cases SET status = ?, owner = ? WHERE id = ?",
@@ -299,22 +293,60 @@ def create_review(payload: dict) -> dict:
     execute_insert(
         """
         INSERT INTO action_logs (
-          case_id, decision_id, action_type, status, request_payload_json,
-          response_payload_json, executed_by, executed_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          case_id, decision_id, action_type, status, preview_payload_json,
+          request_payload_json, response_payload_json, external_url, failure_reason,
+          retryable, executed_by, executed_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             case_id,
             decision_id,
             corrected_action,
             execution["status"],
+            json.dumps(action_preview),
             json.dumps(payload),
             json.dumps(execution["response"]),
+            action_details["external_url"],
+            action_details["failure_reason"],
+            int(action_details["retryable"]),
             payload.get("reviewer_id") or "local-reviewer",
             now,
         ),
     )
     return {"decision_id": decision_id, "status": status}
+
+
+def build_review_payload(payload: dict, analysis: dict) -> dict:
+    action_type = payload.get("corrected_action") or analysis.get("suggested_action") or "reply_draft"
+    return {
+        **payload,
+        "corrected_category": payload.get("corrected_category") or analysis.get("category"),
+        "corrected_severity": payload.get("corrected_severity") or analysis.get("severity"),
+        "corrected_risk_score": payload.get("corrected_risk_score") or analysis.get("risk_score"),
+        "corrected_action": action_type,
+        "corrected_owner": payload.get("corrected_owner") or analysis.get("suggested_owner"),
+        "corrected_reply": payload.get("corrected_reply") or analysis.get("reply_draft"),
+    }
+
+
+def action_result_details(execution: dict) -> dict:
+    response = execution.get("response") or {}
+    return {
+        "external_url": extract_external_url(response),
+        "failure_reason": response.get("message") if execution.get("status") in {"failed", "skipped"} else None,
+        "retryable": execution.get("status") == "failed",
+    }
+
+
+def extract_external_url(response: dict) -> str | None:
+    body = response.get("body")
+    if isinstance(body, dict):
+        for key in ("html_url", "url"):
+            if body.get(key):
+                return body[key]
+    if response.get("url"):
+        return response["url"]
+    return None
 
 
 def record_review_edit_events(
